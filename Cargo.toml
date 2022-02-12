@@ -1,0 +1,14 @@
+[package]
+name = "powsup"
+version = "0.1.0"
+authors = ["Kai Harries <kai.harries@posteo.de>"]
+description = "Controlling a Manson power-supply via serial connection."
+license = "MIT"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "^1.0"
+clap = { version = "^3.0.5", features = ["derive"] }
+serialport = "^4.0.1"
