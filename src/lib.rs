@@ -1,6 +1,6 @@
 use anyhow::{bail, Context, Result};
-use serialport::{SerialPort, SerialPortInfo, SerialPortType};
-use std::time::Duration;
+use serialport::{ClearBuffer, SerialPort, SerialPortInfo, SerialPortType};
+use std::{str::from_utf8, time::Duration};
 
 pub fn list_ports(all: bool, details: bool) -> Result<()> {
     let ports = serialport::available_ports()
@@ -65,26 +65,24 @@ pub fn status(port: &str) -> Result<()> {
     ] {
         powsup.write(cmd)?;
         let reply = powsup.read()?;
-        let (current, ack) = if reply.len() == 10 {
-            // HCS-3100, 3150, 3200, 3202
-            (&reply[5..6], &reply[7..10])
+        // Print common part
+        if reply.len() >= 10 {
+            print!("{:9} {}.", label, &reply[0..2]);
+        }
+        // Print remaining data
+        if reply.len() == 10 {
+            println!("{:2}V  {}.{:3}A", &reply[2..3], &reply[3..5], &reply[5..6]);
         } else if reply.len() == 11 {
-            // HCS-3102, 3104, 3204
-            (&reply[5..7], &reply[8..11])
+            println!("{:2}V  {}.{:3}A", &reply[2..3], &reply[3..5], &reply[5..7]);
+        } else if reply.len() == 13 {
+            println!("{:2}V  {}.{:3}A", &reply[2..4], &reply[4..6], &reply[6..9]);
         } else {
-            bail!("Unexpected length of reply from power-supply: {:?}", &reply)
+            bail!(
+                "Unexpected length {} of reply from power-supply: {:?}",
+                reply.len(),
+                &reply
+            )
         };
-        if ack != "OK\r" {
-            bail!("Unexpected reply from power-supply: {:?}", &reply)
-        };
-        println!(
-            "{:9} {}.{}V  {}.{}A",
-            label,
-            &reply[0..2],
-            &reply[2..3],
-            &reply[3..5],
-            current
-        );
     }
     Ok(())
 }
@@ -92,7 +90,6 @@ pub fn status(port: &str) -> Result<()> {
 fn is_powersupply(SerialPortInfo { port_type, .. }: &SerialPortInfo) -> bool {
     if let SerialPortType::UsbPort(info) = port_type {
         if let Some(manufacturer) = &info.manufacturer {
-            // TODO verify this
             manufacturer.contains("Silicon Labs")
         } else {
             false
@@ -109,10 +106,15 @@ struct PowSup {
 impl PowSup {
     fn new(port: &str) -> Result<PowSup> {
         let port = serialport::new(port, 9600)
+            .data_bits(serialport::DataBits::Eight)
+            .stop_bits(serialport::StopBits::One)
+            .parity(serialport::Parity::None)
+            .flow_control(serialport::FlowControl::None)
             // TODO figure out what a good timeout could be
             .timeout(Duration::from_millis(1000))
             .open()
             .with_context(|| format!("Failed to open the serial port \"{}\"", port))?;
+        port.clear(ClearBuffer::All)?;
         Ok(PowSup { port })
     }
 
@@ -123,14 +125,29 @@ impl PowSup {
     }
 
     fn read(&mut self) -> Result<String> {
-        let mut buf: Vec<u8> = vec![0; 32];
-        self.port
-            .read(buf.as_mut_slice())
-            .with_context(|| "Read from serial port failed.")?;
-        Ok(std::str::from_utf8(&buf)?.to_string())
+        let mut s = String::new();
+        let mut is_incomplete = true;
+        for _ in 1..20 {
+            let mut buf: Vec<u8> = vec![0; 32];
+            std::thread::sleep(Duration::from_millis(20));
+            self.port
+                .read(buf.as_mut_slice())
+                .with_context(|| "Read from serial port failed.")?;
+            s.push_str(from_utf8(
+                &buf.into_iter().take_while(|&x| x != 0).collect::<Vec<u8>>(),
+            )?);
+            if s.ends_with("OK\r") {
+                is_incomplete = false;
+                break;
+            }
+        }
+        if is_incomplete {
+            bail!("Incomplete reply from power-supply: {:?}", &s)
+        };
+        Ok(s)
     }
 
-    /// Read the return value from the power-supply and raise return an error if the value is not "OK\r"
+    /// Read the return value from the power-supply and return an error if the value is not "OK\r"
     fn expect_ok(&mut self) -> Result<()> {
         let result = self.read()?;
         if result == "OK\r" {
