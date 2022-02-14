@@ -105,6 +105,7 @@ struct PowSup {
 
 impl PowSup {
     fn new(port: &str) -> Result<PowSup> {
+        log::trace!("opening port");
         let port = serialport::new(port, 9600)
             .data_bits(serialport::DataBits::Eight)
             .stop_bits(serialport::StopBits::One)
@@ -119,6 +120,7 @@ impl PowSup {
     }
 
     fn write(&mut self, s: &str) -> Result<()> {
+        log::debug!("write: sending {:?}", s);
         self.port
             .write_all(s.as_bytes())
             .with_context(|| "Write to serial port failed.")
@@ -127,12 +129,13 @@ impl PowSup {
     fn read(&mut self) -> Result<String> {
         let mut s = String::new();
         let mut is_incomplete = true;
-        for _ in 1..20 {
+        for i in 1..20 {
             let mut buf: Vec<u8> = vec![0; 32];
             std::thread::sleep(Duration::from_millis(20));
             self.port
                 .read(buf.as_mut_slice())
                 .with_context(|| "Read from serial port failed.")?;
+            log::trace!("read: #{} got {:?}", &i, &buf);
             s.push_str(from_utf8(
                 &buf.into_iter().take_while(|&x| x != 0).collect::<Vec<u8>>(),
             )?);
@@ -141,6 +144,7 @@ impl PowSup {
                 break;
             }
         }
+        log::debug!("read: got {:?}", &s);
         if is_incomplete {
             bail!("Incomplete reply from power-supply: {:?}", &s)
         };

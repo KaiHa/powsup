@@ -1,8 +1,13 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
+use clap_verbosity_flag::{Verbosity, WarnLevel};
+use simple_logger::SimpleLogger;
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
+    SimpleLogger::new()
+        .with_level(cli.verbose.log_level_filter())
+        .init()?;
     match cli.command {
         Command::List { all, details } => powsup::list_ports(all, details),
         Command::Off => powsup::off(&get_port(cli)?),
@@ -28,6 +33,8 @@ struct Cli {
     /// The serial port that the power supply is connected to.
     #[clap(short, long)]
     serial_port: Option<String>,
+    #[clap(flatten)]
+    verbose: Verbosity<WarnLevel>,
 }
 
 #[derive(Debug, Subcommand)]
