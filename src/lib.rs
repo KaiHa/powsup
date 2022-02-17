@@ -56,13 +56,17 @@ pub fn powercycle(port: &str, duration: u64) -> Result<()> {
     powsup.expect_ok()
 }
 
-pub fn status(port: &str) -> Result<()> {
+pub fn status(port: &str, brief: bool) -> Result<()> {
     let mut powsup = PowSup::new(port)?;
-    for (cmd, label) in &[
-        ("GMAX\r", "Maximum"),
-        ("GETS\r", "Preset"),
-        ("GETD\r", "Display"),
-    ] {
+    for (cmd, label, _) in &[
+        ("GMAX\r", "Maximum", false),
+        ("GETS\r", "Preset", false),
+        ("GETD\r", "Display", true),
+    ]
+    .into_iter()
+    .filter(|&(_, _, essential)| essential || !brief)
+    .collect::<Vec<(&str, &str, bool)>>()
+    {
         powsup.write(cmd)?;
         let reply = powsup.read()?;
         // Print common part

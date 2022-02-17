@@ -13,7 +13,7 @@ fn main() -> Result<()> {
         Command::Off => powsup::off(&get_port(cli)?),
         Command::On => powsup::on(&get_port(cli)?),
         Command::Powercycle { duration } => powsup::powercycle(&get_port(cli)?, duration),
-        Command::Status => powsup::status(&get_port(cli)?),
+        Command::Status { brief } => powsup::status(&get_port(cli)?, brief),
     }
 }
 
@@ -59,5 +59,9 @@ enum Command {
         duration: u64,
     },
     /// Get the preset and the actual voltage and current values
-    Status,
+    Status {
+        /// Only show display value
+        #[clap(short, long)]
+        brief: bool,
+    },
 }
