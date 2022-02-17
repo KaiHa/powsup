@@ -67,15 +67,42 @@ pub fn status(port: &str) -> Result<()> {
         let reply = powsup.read()?;
         // Print common part
         if reply.len() >= 10 {
-            print!("{:9} {}.", label, &reply[0..2]);
+            print!(
+                "{:9} {:2}.",
+                label,
+                &reply[0..2]
+                    .parse::<u32>()
+                    .with_context(|| "Failed to parse number from reply")?
+            );
         }
         // Print remaining data
         if reply.len() == 10 {
-            println!("{:2}V  {}.{:3}A", &reply[2..3], &reply[3..5], &reply[5..6]);
+            println!(
+                "{:2}V  {:2}.{:3}A",
+                &reply[2..3],
+                &reply[3..5]
+                    .parse::<u32>()
+                    .with_context(|| "Failed to parse number from reply")?,
+                &reply[5..6]
+            );
         } else if reply.len() == 11 {
-            println!("{:2}V  {}.{:3}A", &reply[2..3], &reply[3..5], &reply[5..7]);
+            println!(
+                "{:2}V  {:2}.{:3}A",
+                &reply[2..3],
+                &reply[3..5]
+                    .parse::<u32>()
+                    .with_context(|| "Failed to parse number from reply")?,
+                &reply[5..7]
+            );
         } else if reply.len() == 13 {
-            println!("{:2}V  {}.{:3}A", &reply[2..4], &reply[4..6], &reply[6..9]);
+            println!(
+                "{:2}V  {:2}.{:3}A",
+                &reply[2..4],
+                &reply[4..6]
+                    .parse::<u32>()
+                    .with_context(|| "Failed to parse number from reply")?,
+                &reply[6..9]
+            );
         } else {
             bail!(
                 "Unexpected length {} of reply from power-supply: {:?}",
