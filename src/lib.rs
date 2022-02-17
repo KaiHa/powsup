@@ -142,8 +142,7 @@ impl PowSup {
             .stop_bits(serialport::StopBits::One)
             .parity(serialport::Parity::None)
             .flow_control(serialport::FlowControl::None)
-            // TODO figure out what a good timeout could be
-            .timeout(Duration::from_millis(1000))
+            .timeout(Duration::from_millis(20))
             .open()
             .with_context(|| format!("Failed to open the serial port \"{}\"", port))?;
         port.clear(ClearBuffer::All)?;
@@ -162,7 +161,6 @@ impl PowSup {
         let mut is_incomplete = true;
         for i in 1..20 {
             let mut buf: Vec<u8> = vec![0; 32];
-            std::thread::sleep(Duration::from_millis(20));
             self.port
                 .read(buf.as_mut_slice())
                 .with_context(|| "Read from serial port failed.")?;
