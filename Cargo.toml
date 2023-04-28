@@ -10,8 +10,8 @@ edition = "2021"
 
 [dependencies]
 anyhow = "^1.0"
-clap = { version = "^3.0.5", features = ["derive"] }
-clap-verbosity-flag = "^1.0.0"
-log = "^0.4.14"
-serialport = "^4.0.1"
-simple_logger = "^2.1.0"
+clap = { version = "^4.2.5", features = ["derive"] }
+clap-verbosity-flag = "^2.0.1"
+log = "^0.4.17"
+serialport = "^4.2"
+simple_logger = "^4.1"
