@@ -21,7 +21,7 @@ fn get_port(cli: Cli) -> Result<String> {
     if let Some(port) = cli.serial_port {
         Ok(port)
     } else {
-        powsup::guess_port().with_context(|| "Failed to guess serial-port of power-supply.  Use option `--serial-port` to select one.  Try the command `powsup list --all` to get a list of all serial-ports.")
+        powsup::guess_port().context("Failed to guess serial-port of power-supply.  Use option `--serial-port` to select one.  Try the command `powsup list --all` to get a list of all serial-ports.")
     }
 }
 

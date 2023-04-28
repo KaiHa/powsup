@@ -4,7 +4,7 @@ use std::{str::from_utf8, time::Duration};
 
 pub fn list_ports(all: bool, details: bool) -> Result<()> {
     let ports = serialport::available_ports()
-        .with_context(|| "Failed to enumerate the available serial ports.")?;
+        .context("Failed to enumerate the available serial ports.")?;
     let predicate: fn(&SerialPortInfo) -> bool = if all { |_| true } else { is_powersupply };
     for p in ports.into_iter().filter(predicate) {
         if details {
@@ -22,7 +22,7 @@ pub fn list_ports(all: bool, details: bool) -> Result<()> {
 
 pub fn guess_port() -> Result<String> {
     let ports: Vec<SerialPortInfo> = serialport::available_ports()
-        .with_context(|| "Failed to enumerate the available serial ports.")?
+        .context("Failed to enumerate the available serial ports.")?
         .into_iter()
         .filter(is_powersupply)
         .collect();
@@ -76,7 +76,7 @@ pub fn status(port: &str, brief: bool) -> Result<()> {
                 label,
                 &reply[0..2]
                     .parse::<u32>()
-                    .with_context(|| "Failed to parse number from reply")?
+                    .context("Failed to parse number from reply")?
             );
         }
         // Print remaining data
@@ -86,7 +86,7 @@ pub fn status(port: &str, brief: bool) -> Result<()> {
                 &reply[2..3],
                 &reply[3..5]
                     .parse::<u32>()
-                    .with_context(|| "Failed to parse number from reply")?,
+                    .context("Failed to parse number from reply")?,
                 &reply[5..6]
             );
         } else if reply.len() == 11 {
@@ -95,7 +95,7 @@ pub fn status(port: &str, brief: bool) -> Result<()> {
                 &reply[2..3],
                 &reply[3..5]
                     .parse::<u32>()
-                    .with_context(|| "Failed to parse number from reply")?,
+                    .context("Failed to parse number from reply")?,
                 &reply[5..7]
             );
         } else if reply.len() == 13 {
@@ -104,7 +104,7 @@ pub fn status(port: &str, brief: bool) -> Result<()> {
                 &reply[2..4],
                 &reply[4..6]
                     .parse::<u32>()
-                    .with_context(|| "Failed to parse number from reply")?,
+                    .context("Failed to parse number from reply")?,
                 &reply[6..9]
             );
         } else {
@@ -153,7 +153,7 @@ impl PowSup {
         log::debug!("write: sending {:?}", s);
         self.port
             .write_all(s.as_bytes())
-            .with_context(|| "Write to serial port failed.")
+            .context("Write to serial port failed.")
     }
 
     fn read(&mut self) -> Result<String> {
@@ -163,7 +163,7 @@ impl PowSup {
             let mut buf: Vec<u8> = vec![0; 32];
             self.port
                 .read(buf.as_mut_slice())
-                .with_context(|| "Read from serial port failed.")?;
+                .context("Read from serial port failed.")?;
             log::trace!("read: #{} got {:?}", &i, &buf);
             s.push_str(from_utf8(
                 &buf.into_iter().take_while(|&x| x != 0).collect::<Vec<u8>>(),
