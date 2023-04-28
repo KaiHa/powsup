@@ -10,19 +10,21 @@ fn main() -> Result<()> {
         .init()?;
     match cli.command {
         Command::List { all, details } => powsup::list_ports(all, details),
-        Command::Off => powsup::off(&get_port(cli)?),
-        Command::On => powsup::on(&get_port(cli)?),
-        Command::Powercycle { duration } => powsup::powercycle(&get_port(cli)?, duration),
-        Command::Status { brief } => powsup::status(&get_port(cli)?, brief),
+        Command::Off => get_powsup(cli)?.off(),
+        Command::On => get_powsup(cli)?.on(),
+        Command::Powercycle { duration } => get_powsup(cli)?.powercycle(duration),
+        Command::Status { brief } => powsup::status(&mut get_powsup(cli)?, brief),
+        Command::Interactive => powsup::interactive(&mut get_powsup(cli)?),
     }
 }
 
-fn get_port(cli: Cli) -> Result<String> {
-    if let Some(port) = cli.serial_port {
+fn get_powsup(cli: Cli) -> Result<powsup::PowSup> {
+    let port = if let Some(port) = cli.serial_port {
         Ok(port)
     } else {
         powsup::guess_port().context("Failed to guess serial-port of power-supply.  Use option `--serial-port` to select one.  Try the command `powsup list --all` to get a list of all serial-ports.")
-    }
+    };
+    powsup::PowSup::new(&port?)
 }
 
 #[derive(Parser, Debug)]
@@ -64,4 +66,6 @@ enum Command {
         #[clap(short, long)]
         brief: bool,
     },
+    /// Run in interactive mode (press 'q' to exit)
+    Interactive,
 }

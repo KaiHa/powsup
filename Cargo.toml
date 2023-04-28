@@ -1,6 +1,6 @@
 [package]
 name = "powsup"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Kai Harries <kai.harries@posteo.de>"]
 description = "Controlling a Manson power-supply via serial connection."
 license = "MIT"
@@ -12,6 +12,8 @@ edition = "2021"
 anyhow = "^1.0"
 clap = { version = "^4.2.5", features = ["derive"] }
 clap-verbosity-flag = "^2.0.1"
+crossterm = "^0.26.1"
 log = "^0.4.17"
 serialport = "^4.2"
 simple_logger = "^4.1"
+ratatui = "^0.20.1"
