@@ -8,7 +8,7 @@ stdenv.mkDerivation {
   ];
   buildInputs = [
     gpgme
-    libudev
+    udev
     openssl
   ];
 
