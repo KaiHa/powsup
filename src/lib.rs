@@ -140,10 +140,14 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
             (f32::NAN, f32::NAN, "--")
         }
     };
+    let ppanes = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Min(8), Constraint::Min(5)].as_ref())
+        .split(f.size());
     let panes = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(60), Constraint::Percentage(40)].as_ref())
-        .split(f.size());
+        .split(ppanes[0]);
 
     let block = Block::default()
         .title(if let Some(s) = powsup.port.name() {
@@ -152,7 +156,7 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
             String::from(" <unknown port> ")
         })
         .borders(Borders::ALL);
-    let mut text = vec![
+    let text = vec![
         Spans::from(""),
         Spans::from("        Voltage   Current    "),
         Spans::from(format!("Maximum: {:5.2} V   {:5.2} A    ", max_v, max_i)),
@@ -164,9 +168,7 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
             "Actual:  {:5.2} V   {:5.2} A  {}",
             display_v, display_i, display_mode
         )),
-        Spans::from(""),
     ];
-    text.append(&mut message);
     let paragraph = Paragraph::new(text.clone())
         .alignment(Alignment::Center)
         .block(block);
@@ -187,6 +189,11 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
         .alignment(Alignment::Center)
         .block(block);
     f.render_widget(paragraph, panes[1]);
+
+    // lower block
+    let block = Block::default().title(" Messages ").borders(Borders::ALL);
+    let paragraph = Paragraph::new(message.clone()).block(block);
+    f.render_widget(paragraph, ppanes[1]);
 }
 
 fn is_powersupply(SerialPortInfo { port_type, .. }: &SerialPortInfo) -> bool {
