@@ -138,7 +138,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, powsup: &mut PowSup) -> Resul
     loop {
         terminal.draw(|f| update_tui(f, powsup))?;
 
-        if event::poll(Duration::from_secs(2))? {
+        if event::poll(Duration::from_millis(600))? {
             if let Event::Key(key) = event::read()? {
                 match key.code {
                     KeyCode::Char('p') => powsup.on()?,
