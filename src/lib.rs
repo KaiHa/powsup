@@ -1,6 +1,6 @@
 use anyhow::{anyhow, bail, Context, Result};
 use serialport::{ClearBuffer, SerialPort, SerialPortInfo, SerialPortType};
-use std::{io, str::from_utf8, time::Duration};
+use std::{collections::VecDeque, io, str::from_utf8, time::Duration};
 
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
@@ -211,6 +211,7 @@ fn is_powersupply(SerialPortInfo { port_type, .. }: &SerialPortInfo) -> bool {
 pub struct PowSup {
     port: Box<dyn SerialPort>,
     cached_max: Option<(f32, f32)>,
+    trend: VecDeque<(f32, f32)>
 }
 
 impl PowSup {
@@ -228,6 +229,7 @@ impl PowSup {
         Ok(PowSup {
             port,
             cached_max: Option::None,
+            trend: VecDeque::with_capacity(300),
         })
     }
 
@@ -313,6 +315,10 @@ impl PowSup {
             "1" => true,
             _other => bail!("Failed to parse const-current mode from reply"),
         };
+        while self.trend.len() >= 300 {
+            self.trend.pop_front();
+        }
+        self.trend.push_back((v, c));
         Ok((v, c, cc))
     }
 
