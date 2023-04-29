@@ -50,63 +50,19 @@ pub fn guess_port() -> Result<String> {
 }
 
 pub fn status(powsup: &mut PowSup, brief: bool) -> Result<()> {
-    for (cmd, label, _) in &[
-        ("GMAX\r", "Maximum", false),
-        ("GETS\r", "Preset", false),
-        ("GETD\r", "Display", true),
-    ]
-    .into_iter()
-    .filter(|&(_, _, essential)| essential || !brief)
-    .collect::<Vec<(&str, &str, bool)>>()
-    {
-        powsup.write(cmd)?;
-        let reply = powsup.read()?;
-        // Print common part
-        if reply.len() >= 10 {
-            print!(
-                "{:9} {:2}.",
-                label,
-                &reply[0..2]
-                    .parse::<u32>()
-                    .context("Failed to parse number from reply")?
-            );
-        }
-        // Print remaining data
-        if reply.len() == 10 {
-            println!(
-                "{:2}V  {:2}.{:3}A",
-                &reply[2..3],
-                &reply[3..5]
-                    .parse::<u32>()
-                    .context("Failed to parse number from reply")?,
-                &reply[5..6]
-            );
-        } else if reply.len() == 11 {
-            println!(
-                "{:2}V  {:2}.{:3}A",
-                &reply[2..3],
-                &reply[3..5]
-                    .parse::<u32>()
-                    .context("Failed to parse number from reply")?,
-                &reply[5..7]
-            );
-        } else if reply.len() == 13 {
-            println!(
-                "{:2}V  {:2}.{:3}A",
-                &reply[2..4],
-                &reply[4..6]
-                    .parse::<u32>()
-                    .context("Failed to parse number from reply")?,
-                &reply[6..9]
-            );
-        } else {
-            bail!(
-                "Unexpected length {} of reply from power-supply: {:?}",
-                reply.len(),
-                &reply
-            )
-        };
+    if !brief {
+        let (v, i) = powsup.get_max()?;
+        println!("Maximum: {:5.2} V  {:5.2} A", v, i);
+        let (v, i) = powsup.get_preset()?;
+        println!("Preset:  {:5.2} V  {:5.2} A", v, i);
     }
+    let (v, i, cc) = powsup.get_display()?;
+    println!(
+        "Display: {:5.2} V  {:5.2} A  {}",
+        v,
+        i,
+        if cc { "CC" } else { "CV" }
+    );
     Ok(())
 }
 
