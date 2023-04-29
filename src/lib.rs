@@ -11,8 +11,9 @@ use ratatui::{
     backend::{Backend, CrosstermBackend},
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Style},
+    symbols,
     text::{Span, Spans},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Axis, Block, Borders, Chart, Dataset, GraphType, Paragraph},
     Frame, Terminal,
 };
 
@@ -142,7 +143,7 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
     };
     let ppanes = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Min(8), Constraint::Min(5)].as_ref())
+        .constraints([Constraint::Length(8), Constraint::Min(10), Constraint::Length(6)].as_ref())
         .split(f.size());
     let panes = Layout::default()
         .direction(Direction::Horizontal)
@@ -190,10 +191,39 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
         .block(block);
     f.render_widget(paragraph, panes[1]);
 
+    // middle block
+    let data: Vec<(f64, f64)> = std::iter::zip(1..300, &powsup.trend).map(|(x, (_, i))| (x.into(), i.clone().into())).collect();
+    let datasets = vec![Dataset::default()
+        .marker(symbols::Marker::Braille)
+        .graph_type(GraphType::Line)
+        .data(&data)];
+    let chart = Chart::new(datasets)
+        .block(
+            Block::default()
+                .title(Span::raw(" Trend "))
+                .borders(Borders::ALL),
+        )
+        .x_axis(
+            Axis::default()
+                .title("# Sample")
+                .bounds([1.0, 300.0]),
+        )
+        .y_axis(
+            Axis::default()
+                .title("A")
+                .labels(vec![
+                    Span::raw("0"),
+                    Span::raw(format!("{}", preset_i)),
+                ])
+                .bounds([0.0, preset_i.into()]),
+        );
+    f.render_widget(chart, ppanes[1]);
+
+
     // lower block
     let block = Block::default().title(" Messages ").borders(Borders::ALL);
     let paragraph = Paragraph::new(message.clone()).block(block);
-    f.render_widget(paragraph, ppanes[1]);
+    f.render_widget(paragraph, ppanes[2]);
 }
 
 fn is_powersupply(SerialPortInfo { port_type, .. }: &SerialPortInfo) -> bool {
