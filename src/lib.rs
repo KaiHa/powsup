@@ -113,21 +113,30 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
     let (max_v, max_i) = match powsup.get_max() {
         Ok((a, b)) => (a, b),
         Err(err) => {
-            message.push(Spans::from(Span::styled(err.to_string(), Style::default().fg(Color::Red))));
+            message.push(Spans::from(Span::styled(
+                err.to_string(),
+                Style::default().fg(Color::Red),
+            )));
             (f32::NAN, f32::NAN)
         }
     };
     let (preset_v, preset_i) = match powsup.get_preset() {
         Ok((a, b)) => (a, b),
         Err(err) => {
-            message.push(Spans::from(Span::styled(err.to_string(), Style::default().fg(Color::Red))));
+            message.push(Spans::from(Span::styled(
+                err.to_string(),
+                Style::default().fg(Color::Red),
+            )));
             (f32::NAN, f32::NAN)
         }
     };
     let (display_v, display_i, display_mode) = match powsup.get_display() {
-        Ok((a, b, c)) => (a, b, if c {"CC"} else {"CV"}),
+        Ok((a, b, c)) => (a, b, if c { "CC" } else { "CV" }),
         Err(err) => {
-            message.push(Spans::from(Span::styled(err.to_string(), Style::default().fg(Color::Red))));
+            message.push(Spans::from(Span::styled(
+                err.to_string(),
+                Style::default().fg(Color::Red),
+            )));
             (f32::NAN, f32::NAN, "--")
         }
     };
@@ -147,8 +156,14 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
         Spans::from(""),
         Spans::from("        Voltage   Current    "),
         Spans::from(format!("Maximum: {:5.2} V   {:5.2} A    ", max_v, max_i)),
-        Spans::from(format!("Preset:  {:5.2} V   {:5.2} A    ", preset_v, preset_i)),
-        Spans::from(format!("Actual:  {:5.2} V   {:5.2} A  {}", display_v, display_i, display_mode)),
+        Spans::from(format!(
+            "Preset:  {:5.2} V   {:5.2} A    ",
+            preset_v, preset_i
+        )),
+        Spans::from(format!(
+            "Actual:  {:5.2} V   {:5.2} A  {}",
+            display_v, display_i, display_mode
+        )),
         Spans::from(""),
     ];
     text.append(&mut message);
