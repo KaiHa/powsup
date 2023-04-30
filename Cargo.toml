@@ -1,6 +1,6 @@
 [package]
 name = "powsup"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Kai Harries <kai.harries@posteo.de>"]
 description = "Controlling a Manson power-supply via serial connection."
 license = "MIT"
