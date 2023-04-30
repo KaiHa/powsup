@@ -1,6 +1,6 @@
 use anyhow::{anyhow, bail, Context, Result};
 use serialport::{ClearBuffer, SerialPort, SerialPortInfo, SerialPortType};
-use std::{collections::VecDeque, io, str::from_utf8, time::Duration};
+use std::{collections::VecDeque, io, str::from_utf8, time, time::Duration};
 
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
@@ -92,14 +92,23 @@ pub fn interactive(powsup: &mut PowSup) -> Result<()> {
 }
 
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, powsup: &mut PowSup) -> Result<()> {
+    const PERIOD: Duration = Duration::from_millis(600);
+    let mut last_tick = time::Instant::now();
     loop {
-        terminal.draw(|f| update_tui(f, powsup))?;
+        if last_tick.elapsed() >= PERIOD {
+            terminal.draw(|f| update_tui(f, powsup))?;
+            last_tick = time::Instant::now();
+        }
 
-        if event::poll(Duration::from_millis(600))? {
+        let timeout = PERIOD
+            .checked_sub(last_tick.elapsed())
+            .unwrap_or_else(|| Duration::from_secs(0));
+        if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 match key.code {
                     KeyCode::Char('p') => powsup.on()?,
                     KeyCode::Char('n') => powsup.off()?,
+                    // TODO implement powercycle by off/on and time measurement
                     KeyCode::Char('c') => powsup.powercycle(3)?,
                     KeyCode::Char('q') => return Ok(()),
                     _other => (),
