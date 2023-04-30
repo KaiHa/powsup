@@ -94,10 +94,17 @@ pub fn interactive(powsup: &mut PowSup) -> Result<()> {
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, powsup: &mut PowSup) -> Result<()> {
     const PERIOD: Duration = Duration::from_millis(600);
     let mut last_tick = time::Instant::now();
+    let mut last_powercycle: Option<time::Instant> = None;
     loop {
         if last_tick.elapsed() >= PERIOD {
             terminal.draw(|f| update_tui(f, powsup))?;
             last_tick = time::Instant::now();
+        }
+        if let Some(last_pc) = last_powercycle {
+            if last_pc.elapsed() >= Duration::from_secs(3) {
+                powsup.on()?;
+                last_powercycle = None;
+            }
         }
 
         let timeout = PERIOD
@@ -108,8 +115,10 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, powsup: &mut PowSup) -> Resul
                 match key.code {
                     KeyCode::Char('p') => powsup.on()?,
                     KeyCode::Char('n') => powsup.off()?,
-                    // TODO implement powercycle by off/on and time measurement
-                    KeyCode::Char('c') => powsup.powercycle(3)?,
+                    KeyCode::Char('c') => {
+                        powsup.off()?;
+                        last_powercycle = Some(time::Instant::now());
+                    },
                     KeyCode::Char('q') => return Ok(()),
                     _other => (),
                 }
