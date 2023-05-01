@@ -1,4 +1,5 @@
 use anyhow::{anyhow, bail, Context, Result};
+use clap::Args;
 use serialport::{ClearBuffer, SerialPort, SerialPortInfo, SerialPortType};
 use std::{collections::VecDeque, io, str::from_utf8, time, time::Duration};
 
@@ -67,14 +68,14 @@ pub fn status(powsup: &mut PowSup, brief: bool) -> Result<()> {
     Ok(())
 }
 
-pub fn interactive(powsup: &mut PowSup) -> Result<()> {
+pub fn interactive(powsup: &mut PowSup, args: &InteractiveArgs) -> Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let res = run_app(&mut terminal, powsup);
+    let res = run_app(&mut terminal, powsup, args);
 
     disable_raw_mode()?;
     execute!(
@@ -91,23 +92,27 @@ pub fn interactive(powsup: &mut PowSup) -> Result<()> {
     }
 }
 
-fn run_app<B: Backend>(terminal: &mut Terminal<B>, powsup: &mut PowSup) -> Result<()> {
-    const PERIOD: Duration = Duration::from_millis(600);
+fn run_app<B: Backend>(
+    terminal: &mut Terminal<B>,
+    powsup: &mut PowSup,
+    args: &InteractiveArgs,
+) -> Result<()> {
     let mut last_tick = time::Instant::now();
     let mut last_powercycle: Option<time::Instant> = None;
     loop {
-        if last_tick.elapsed() >= PERIOD {
+        if last_tick.elapsed() >= args.period {
             terminal.draw(|f| update_tui(f, powsup))?;
             last_tick = time::Instant::now();
         }
         if let Some(last_pc) = last_powercycle {
-            if last_pc.elapsed() >= Duration::from_secs(3) {
+            if last_pc.elapsed() >= args.off_duration {
                 powsup.on()?;
                 last_powercycle = None;
             }
         }
 
-        let timeout = PERIOD
+        let timeout = args
+            .period
             .checked_sub(last_tick.elapsed())
             .unwrap_or_else(|| Duration::from_secs(0));
         if event::poll(timeout)? {
@@ -410,5 +415,22 @@ impl PowSup {
             self.cached_max = Some((v, c));
             Ok((v, c))
         }
+    }
+}
+
+#[derive(Debug, Args)]
+pub struct InteractiveArgs {
+    /// The pause between refreshs in milliseconds
+    #[clap(short, long, default_value = "600", value_parser = ms_parser)]
+    period: Duration,
+    /// The duration in milliseconds that the output should be turned off during powercycle
+    #[clap(short, long, default_value = "3000", value_parser = ms_parser)]
+    off_duration: Duration,
+}
+
+fn ms_parser(ms: &str) -> std::result::Result<Duration, String> {
+    match ms.parse() {
+        Ok(n) => Ok(Duration::from_millis(n)),
+        Err(err) => Err(err.to_string()),
     }
 }

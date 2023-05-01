@@ -10,16 +10,16 @@ fn main() -> Result<()> {
         .init()?;
     match cli.command {
         Command::List { all, details } => powsup::list_ports(all, details),
-        Command::Off => get_powsup(cli)?.off(),
-        Command::On => get_powsup(cli)?.on(),
-        Command::Powercycle { duration } => get_powsup(cli)?.powercycle(duration),
-        Command::Status { brief } => powsup::status(&mut get_powsup(cli)?, brief),
-        Command::Interactive => powsup::interactive(&mut get_powsup(cli)?),
+        Command::Off => get_powsup(&cli)?.off(),
+        Command::On => get_powsup(&cli)?.on(),
+        Command::Powercycle { off_duration } => get_powsup(&cli)?.powercycle(off_duration),
+        Command::Status { brief } => powsup::status(&mut get_powsup(&cli)?, brief),
+        Command::Interactive { ref args } => powsup::interactive(&mut get_powsup(&cli)?, &args),
     }
 }
 
-fn get_powsup(cli: Cli) -> Result<powsup::PowSup> {
-    let port = if let Some(port) = cli.serial_port {
+fn get_powsup(cli: &Cli) -> Result<powsup::PowSup> {
+    let port = if let Some(port) = cli.serial_port.clone() {
         Ok(port)
     } else {
         powsup::guess_port().context("Failed to guess serial-port of power-supply.  Use option `--serial-port` to select one.  Try the command `powsup list --all` to get a list of all serial-ports.")
@@ -57,8 +57,8 @@ enum Command {
     /// Turn the output off and after x seconds back on
     Powercycle {
         /// The duration in seconds that the output should be turned off
-        #[clap(default_value_t = 3)]
-        duration: u64,
+        #[clap(short, long, default_value_t = 3)]
+        off_duration: u64,
     },
     /// Get the preset and the actual voltage and current values
     Status {
@@ -67,5 +67,8 @@ enum Command {
         brief: bool,
     },
     /// Run in interactive mode (press 'q' to exit)
-    Interactive,
+    Interactive {
+        #[clap(flatten)]
+        args: powsup::InteractiveArgs,
+    },
 }
