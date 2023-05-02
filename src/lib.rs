@@ -51,23 +51,6 @@ pub fn guess_port() -> Result<String> {
     }
 }
 
-pub fn status(powsup: &mut PowSup, brief: bool) -> Result<()> {
-    if !brief {
-        let (v, i) = powsup.get_max()?;
-        println!("Maximum: {:5.2} V  {:5.2} A", v, i);
-        let (v, i) = powsup.get_preset()?;
-        println!("Preset:  {:5.2} V  {:5.2} A", v, i);
-    }
-    let (v, i, cc) = powsup.get_display()?;
-    println!(
-        "Display: {:5.2} V  {:5.2} A  {}",
-        v,
-        i,
-        if cc { "CC" } else { "CV" }
-    );
-    Ok(())
-}
-
 pub fn interactive(powsup: &mut PowSup, args: &InteractiveArgs) -> Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -419,6 +402,23 @@ impl PowSup {
             self.cached_max = Some((v, c));
             Ok((v, c))
         }
+    }
+
+    pub fn status(&mut self, brief: bool) -> Result<()> {
+        if !brief {
+            let (v, i) = self.get_max()?;
+            println!("Maximum: {:5.2} V  {:5.2} A", v, i);
+            let (v, i) = self.get_preset()?;
+            println!("Preset:  {:5.2} V  {:5.2} A", v, i);
+        }
+        let (v, i, cc) = self.get_display()?;
+        println!(
+            "Display: {:5.2} V  {:5.2} A  {}",
+            v,
+            i,
+            if cc { "CC" } else { "CV" }
+        );
+        Ok(())
     }
 }
 

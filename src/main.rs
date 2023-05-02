@@ -13,7 +13,7 @@ fn main() -> Result<()> {
         Command::Off => get_powsup(&cli)?.off(),
         Command::On => get_powsup(&cli)?.on(),
         Command::Powercycle { off_duration } => get_powsup(&cli)?.powercycle(off_duration),
-        Command::Status { brief } => powsup::status(&mut get_powsup(&cli)?, brief),
+        Command::Status { brief } => get_powsup(&cli)?.status(brief),
         Command::Interactive { ref args } => powsup::interactive(&mut get_powsup(&cli)?, args),
     }
 }
