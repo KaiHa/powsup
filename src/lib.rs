@@ -223,7 +223,7 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
 
     // middle block
     let data: Vec<(f64, f64)> = std::iter::zip(1..300, &powsup.trend)
-        .map(|(x, (_, i))| (x.into(), i.clone().into()))
+        .map(|(x, (_, i))| (x.into(), (*i).into()))
         .collect();
     let datasets = vec![Dataset::default()
         .marker(symbols::Marker::Braille)
