@@ -50,10 +50,10 @@ enum Command {
     Off,
     /// Turn the output on
     On,
-    /// Turn the output off and after x seconds back on
+    /// Turn the output off and after x milliseconds back on
     Powercycle {
-        /// The duration in seconds that the output should be turned off
-        #[clap(short, long, default_value_t = 3)]
+        /// The duration in milliseconds that the output should be turned off
+        #[clap(short, long, default_value_t = 3000)]
         off_duration: u64,
     },
     /// Get the preset and the actual voltage and current values

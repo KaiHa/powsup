@@ -331,7 +331,7 @@ impl PowSup {
     pub fn powercycle(&mut self, duration: u64) -> Result<()> {
         self.write("SOUT1\r")?;
         self.expect_ok()?;
-        std::thread::sleep(Duration::from_secs(duration));
+        std::thread::sleep(Duration::from_millis(duration));
         self.write("SOUT0\r")?;
         self.expect_ok()
     }
