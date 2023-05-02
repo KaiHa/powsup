@@ -235,11 +235,15 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
                 .title(Span::raw(" Trend "))
                 .borders(Borders::ALL),
         )
-        .x_axis(Axis::default().title("# Sample").bounds([1.0, 300.0]))
+        .x_axis(Axis::default().bounds([1.0, 300.0]))
         .y_axis(
             Axis::default()
                 .title("A")
-                .labels(vec![Span::raw("0"), Span::raw(format!("{}", preset_i))])
+                .labels(vec![
+                    Span::raw("0"),
+                    Span::raw(format!("{}", preset_i / 2.0)),
+                    Span::raw(format!("{}", preset_i)),
+                ])
                 .bounds([0.0, preset_i.into()]),
         );
     f.render_widget(chart, ppanes[1]);
