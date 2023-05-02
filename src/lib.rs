@@ -18,12 +18,12 @@ use ratatui::{
     Frame, Terminal,
 };
 
-pub fn list_ports(all: bool, details: bool) -> Result<()> {
+pub fn list_ports(args: &ListArgs) -> Result<()> {
     let ports =
         serialport::available_ports().context("Failed to enumerate the available serial ports.")?;
-    let predicate: fn(&SerialPortInfo) -> bool = if all { |_| true } else { is_powersupply };
+    let predicate: fn(&SerialPortInfo) -> bool = if args.all { |_| true } else { is_powersupply };
     for p in ports.into_iter().filter(predicate) {
-        if details {
+        if args.details {
             let port_type = format!("{:#?}", p.port_type)
                 .lines()
                 .map(|x| format!("    {}\n", x))
@@ -420,6 +420,16 @@ impl PowSup {
         );
         Ok(())
     }
+}
+
+#[derive(Debug, Args)]
+pub struct ListArgs {
+    /// List all available serial ports
+    #[clap(short, long)]
+    all: bool,
+    /// Print details about the serial ports
+    #[clap(short, long)]
+    details: bool,
 }
 
 #[derive(Debug, Args)]

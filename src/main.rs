@@ -9,7 +9,7 @@ fn main() -> Result<()> {
         .with_level(cli.verbose.log_level_filter())
         .init()?;
     match cli.command {
-        Command::List { all, details } => powsup::list_ports(all, details),
+        Command::List { ref args } => powsup::list_ports(args),
         Command::Off => get_powsup(&cli)?.off(),
         Command::On => get_powsup(&cli)?.on(),
         Command::Powercycle { off_duration } => get_powsup(&cli)?.powercycle(off_duration),
@@ -43,12 +43,8 @@ struct Cli {
 enum Command {
     /// List serial ports where a power-supply might be connected to
     List {
-        /// List all available serial ports
-        #[clap(short, long)]
-        all: bool,
-        /// Print details about the serial ports
-        #[clap(short, long)]
-        details: bool,
+        #[clap(flatten)]
+        args: powsup::ListArgs,
     },
     /// Turn the output off
     Off,
