@@ -151,9 +151,9 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
         .direction(Direction::Vertical)
         .constraints(
             [
-                Constraint::Length(8),
-                Constraint::Min(10),
                 Constraint::Length(6),
+                Constraint::Min(10),
+                Constraint::Length(5),
             ]
             .as_ref(),
         )
@@ -171,7 +171,6 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
         })
         .borders(Borders::ALL);
     let text = vec![
-        Spans::from(""),
         Spans::from("        Voltage   Current    "),
         Spans::from(format!("Maximum: {:5.2} V   {:5.2} A    ", max_v, max_i)),
         Spans::from(format!(
@@ -193,7 +192,6 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
         .title(" Key bindings ")
         .borders(Borders::ALL);
     let text = vec![
-        Spans::from(""),
         Spans::from("p => Power on   "),
         Spans::from("n => Power off  "),
         Spans::from("c => Power cycle"),
@@ -214,9 +212,7 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
         .data(&data)];
     let chart = Chart::new(datasets)
         .block(
-            Block::default()
-                .title(Span::raw(" Trend "))
-                .borders(Borders::ALL),
+            Block::default(),
         )
         .x_axis(Axis::default().bounds([1.0, 300.0]))
         .y_axis(
