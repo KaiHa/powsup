@@ -37,3 +37,10 @@ Options:
   -h, --help                       Print help
   -V, --version                    Print version
 #+end_example
+
+** Miscellaneous
+
+#+caption: Create a fake serial device for testing
+#+begin_src bash
+  socat UDP:127.0.0.1:5001,bind=127.0.0.1:5000 PTY,link=/tmp/ttypowsup,raw,echo=0,waitslave
+#+end_src
