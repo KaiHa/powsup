@@ -9,12 +9,13 @@ fn main() -> Result<()> {
         .with_level(cli.verbose.log_level_filter())
         .init()?;
     match cli.command {
-        Command::List { ref args } => powsup::list_ports(args),
-        Command::Off => get_powsup(&cli)?.off(),
-        Command::On => get_powsup(&cli)?.on(),
-        Command::Powercycle { off_duration } => get_powsup(&cli)?.powercycle(off_duration),
-        Command::Status { brief } => get_powsup(&cli)?.status(brief),
-        Command::Interactive { ref args } => powsup::interactive(&mut get_powsup(&cli)?, args),
+        Some(Command::List { ref args }) => powsup::list_ports(args),
+        Some(Command::Off) => get_powsup(&cli)?.off(),
+        Some(Command::On) => get_powsup(&cli)?.on(),
+        Some(Command::Powercycle { off_duration }) => get_powsup(&cli)?.powercycle(off_duration),
+        Some(Command::Status { brief }) => get_powsup(&cli)?.status(brief),
+        Some(Command::Interactive { ref args }) => powsup::interactive(&mut get_powsup(&cli)?, args),
+        None => powsup::interactive(&mut get_powsup(&cli)?, &powsup::InteractiveArgs::default()),
     }
 }
 
@@ -31,7 +32,7 @@ fn get_powsup(cli: &Cli) -> Result<powsup::PowSup> {
 #[clap(about, version, author)]
 struct Cli {
     #[clap(subcommand)]
-    command: Command,
+    command: Option<Command>,
     /// The serial port that the power supply is connected to.
     #[clap(short, long)]
     serial_port: Option<String>,
@@ -62,7 +63,7 @@ enum Command {
         #[clap(short, long)]
         brief: bool,
     },
-    /// Run in interactive mode (press 'q' to exit)
+    /// Run in interactive mode [default]
     Interactive {
         #[clap(flatten)]
         args: powsup::InteractiveArgs,

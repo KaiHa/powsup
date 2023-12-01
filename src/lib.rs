@@ -438,6 +438,15 @@ pub struct InteractiveArgs {
     off_duration: Duration,
 }
 
+impl Default for InteractiveArgs {
+    fn default() -> InteractiveArgs {
+        InteractiveArgs {
+            period: Duration::from_millis(600),
+            off_duration: Duration::from_millis(3000),
+        }
+    }
+}
+
 fn ms_parser(ms: &str) -> std::result::Result<Duration, String> {
     match ms.parse() {
         Ok(n) => Ok(Duration::from_millis(n)),
