@@ -4,7 +4,7 @@ stdenv.mkDerivation {
   name = "rust-env";
   nativeBuildInputs = [
     rustc cargo clippy rustfmt rust-analyzer
-    pkgconfig socat
+    pkg-config socat
   ];
   buildInputs = [
     gpgme
