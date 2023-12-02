@@ -311,10 +311,10 @@ impl PowSup {
         self.expect_ok()
     }
 
-    pub fn powercycle(&mut self, duration: u64) -> Result<()> {
+    pub fn powercycle(&mut self, duration: Duration) -> Result<()> {
         self.write("SOUT1\r")?;
         self.expect_ok()?;
-        std::thread::sleep(Duration::from_millis(duration));
+        std::thread::sleep(duration);
         self.write("SOUT0\r")?;
         self.expect_ok()
     }
@@ -434,7 +434,7 @@ impl Default for InteractiveArgs {
     }
 }
 
-fn ms_parser(ms: &str) -> std::result::Result<Duration, String> {
+pub fn ms_parser(ms: &str) -> std::result::Result<Duration, String> {
     match ms.parse() {
         Ok(n) => Ok(Duration::from_millis(n)),
         Err(err) => Err(err.to_string()),

@@ -2,6 +2,7 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use clap_verbosity_flag::{Verbosity, WarnLevel};
 use simple_logger::SimpleLogger;
+use std::time::Duration;
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -56,8 +57,8 @@ enum Command {
     /// Turn the output off and after x milliseconds back on
     Powercycle {
         /// The duration in milliseconds that the output should be turned off
-        #[clap(short, long, default_value_t = 3000)]
-        off_duration: u64,
+        #[clap(short, long, default_value = "3000", value_parser = powsup::ms_parser)]
+        off_duration: Duration,
     },
     /// Get the preset and the actual voltage and current values
     Status {
