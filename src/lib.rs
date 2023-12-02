@@ -1,22 +1,14 @@
 use anyhow::{anyhow, bail, Context, Result};
 use clap::Args;
-use serialport::{ClearBuffer, SerialPort, SerialPortInfo, SerialPortType};
-use std::{collections::VecDeque, io, str::from_utf8, time, time::Duration};
-
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    layout::{Alignment, Constraint, Direction, Layout},
-    style::{Color, Style},
-    symbols,
-    text::{Line, Span},
-    widgets::{Axis, Block, Borders, Chart, Dataset, GraphType, Paragraph},
-    Frame, Terminal,
-};
+use ratatui::prelude::*;
+use ratatui::widgets::*;
+use serialport::{ClearBuffer, SerialPort, SerialPortInfo, SerialPortType};
+use std::{collections::VecDeque, io, str::from_utf8, time, time::Duration};
 
 pub fn list_ports(args: &ListArgs) -> Result<()> {
     let ports =
