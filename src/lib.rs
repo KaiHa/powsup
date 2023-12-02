@@ -23,14 +23,11 @@ pub fn list_ports(args: &ListArgs) -> Result<()> {
         serialport::available_ports().context("Failed to enumerate the available serial ports.")?;
     let predicate: fn(&SerialPortInfo) -> bool = if args.all { |_| true } else { is_powersupply };
     for p in ports.into_iter().filter(predicate) {
+        println!("{}", p.port_name);
         if args.details {
-            let port_type = format!("{:#?}", p.port_type)
-                .lines()
-                .map(|x| format!("    {}\n", x))
-                .collect::<String>();
-            println!("{}:\n{}", p.port_name, port_type);
-        } else {
-            println!("{}", p.port_name);
+            format!("{:#?}", p.port_type).lines().for_each(|a| {
+                println!("    |{a}");
+            });
         }
     }
     Ok(())
