@@ -13,7 +13,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Style},
     symbols,
-    text::{Span, Spans},
+    text::{Line, Span},
     widgets::{Axis, Block, Borders, Chart, Dataset, GraphType, Paragraph},
     Frame, Terminal,
 };
@@ -112,12 +112,12 @@ fn run_app<B: Backend>(
     }
 }
 
-fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
-    let mut message: Vec<Spans> = Vec::new();
+fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
+    let mut message: Vec<Line> = Vec::new();
     let (max_v, max_i) = match powsup.get_max() {
         Ok((a, b)) => (a, b),
         Err(err) => {
-            message.push(Spans::from(Span::styled(
+            message.push(Line::from(Span::styled(
                 err.to_string(),
                 Style::default().fg(Color::Red),
             )));
@@ -127,7 +127,7 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
     let (preset_v, preset_i) = match powsup.get_preset() {
         Ok((a, b)) => (a, b),
         Err(err) => {
-            message.push(Spans::from(Span::styled(
+            message.push(Line::from(Span::styled(
                 err.to_string(),
                 Style::default().fg(Color::Red),
             )));
@@ -137,7 +137,7 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
     let (display_v, display_i, display_mode) = match powsup.get_display() {
         Ok((a, b, c)) => (a, b, if c { "CC" } else { "CV" }),
         Err(err) => {
-            message.push(Spans::from(Span::styled(
+            message.push(Line::from(Span::styled(
                 err.to_string(),
                 Style::default().fg(Color::Red),
             )));
@@ -168,13 +168,13 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
         })
         .borders(Borders::ALL);
     let text = vec![
-        Spans::from("        Voltage   Current    "),
-        Spans::from(format!("Maximum: {:5.2} V   {:5.2} A    ", max_v, max_i)),
-        Spans::from(format!(
+        Line::from("        Voltage   Current    "),
+        Line::from(format!("Maximum: {:5.2} V   {:5.2} A    ", max_v, max_i)),
+        Line::from(format!(
             "Preset:  {:5.2} V   {:5.2} A    ",
             preset_v, preset_i
         )),
-        Spans::from(format!(
+        Line::from(format!(
             "Actual:  {:5.2} V   {:5.2} A  {}",
             display_v, display_i, display_mode
         )),
@@ -189,10 +189,10 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
         .title(" Key bindings ")
         .borders(Borders::ALL);
     let text = vec![
-        Spans::from("p => Power on   "),
-        Spans::from("n => Power off  "),
-        Spans::from("c => Power cycle"),
-        Spans::from("q => Quit       "),
+        Line::from("p => Power on   "),
+        Line::from("n => Power off  "),
+        Line::from("c => Power cycle"),
+        Line::from("q => Quit       "),
     ];
     let paragraph = Paragraph::new(text.clone())
         .alignment(Alignment::Center)

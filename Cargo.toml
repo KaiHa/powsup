@@ -9,11 +9,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "^1.0"
-clap = { version = "^4.2.5", features = ["derive"] }
-clap-verbosity-flag = "^2.0.1"
-crossterm = "^0.26.1"
-log = "^0.4.17"
-serialport = "^4.2"
-simple_logger = "^4.1"
-ratatui = "^0.20.1"
+anyhow = "1.0.75"
+clap = { version = "4.4.10", features = ["derive"] }
+clap-verbosity-flag = "2.1.0"
+crossterm = "0.27.0"
+log = "0.4.20"
+ratatui = "0.24.0"
+serialport = "4.2.2"
+simple_logger = "4.3.0"
