@@ -434,9 +434,6 @@ impl Default for InteractiveArgs {
     }
 }
 
-pub fn ms_parser(ms: &str) -> std::result::Result<Duration, String> {
-    match ms.parse() {
-        Ok(n) => Ok(Duration::from_millis(n)),
-        Err(err) => Err(err.to_string()),
-    }
+pub fn ms_parser(ms: &str) -> std::result::Result<Duration, std::num::ParseIntError> {
+    ms.parse().map(Duration::from_millis)
 }
