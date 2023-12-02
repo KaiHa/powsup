@@ -41,6 +41,6 @@ Options:
 ** Miscellaneous
 
 #+caption: Create a fake serial device for testing
-#+begin_src tmux :session default:fake-serial-dev
+#+begin_src tmux
   socat UDP:127.0.0.1:5001,bind=127.0.0.1:5000 PTY,link=/tmp/ttypowsup,raw,echo=0,waitslave
 #+end_src
