@@ -211,9 +211,7 @@ fn update_tui<B: Backend>(f: &mut Frame<B>, powsup: &mut PowSup) {
         .graph_type(GraphType::Line)
         .data(&data)];
     let chart = Chart::new(datasets)
-        .block(
-            Block::default(),
-        )
+        .block(Block::default())
         .x_axis(Axis::default().bounds([1.0, 300.0]))
         .y_axis(
             Axis::default()
