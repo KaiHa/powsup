@@ -131,21 +131,17 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
 
     let block = Block::default()
         .title(if let Some(s) = powsup.port.name() {
-            format!(" {} ", s)
+            format!(" {s} ")
         } else {
             String::from(" <unknown port> ")
         })
         .borders(Borders::ALL);
     let text = vec![
         Line::from("        Voltage   Current    "),
-        Line::from(format!("Maximum: {:5.2} V   {:5.2} A    ", max_v, max_i)),
+        Line::from(format!("Maximum: {max_v:5.2} V   {max_i:5.2} A    ")),
+        Line::from(format!("Preset:  {preset_v:5.2} V   {preset_i:5.2} A    ")),
         Line::from(format!(
-            "Preset:  {:5.2} V   {:5.2} A    ",
-            preset_v, preset_i
-        )),
-        Line::from(format!(
-            "Actual:  {:5.2} V   {:5.2} A  {}",
-            display_v, display_i, display_mode
+            "Actual:  {display_v:5.2} V   {display_i:5.2} A  {display_mode}"
         )),
     ];
     let paragraph = Paragraph::new(text.clone())
@@ -225,7 +221,7 @@ impl PowSup {
             .flow_control(serialport::FlowControl::None)
             .timeout(Duration::from_millis(20))
             .open()
-            .with_context(|| format!("Failed to open the serial port \"{}\"", port))?;
+            .with_context(|| format!("Failed to open the serial port \"{port}\""))?;
         port.clear(ClearBuffer::All)?;
         Ok(PowSup {
             port,
@@ -367,15 +363,13 @@ impl PowSup {
     pub fn status(&mut self, brief: bool) -> Result<()> {
         if !brief {
             let (v, i) = self.get_max()?;
-            println!("Maximum: {:5.2} V  {:5.2} A", v, i);
+            println!("Maximum: {v:5.2} V  {i:5.2} A");
             let (v, i) = self.get_preset()?;
-            println!("Preset:  {:5.2} V  {:5.2} A", v, i);
+            println!("Preset:  {v:5.2} V  {i:5.2} A");
         }
         let (v, i, cc) = self.get_display()?;
         println!(
-            "Display: {:5.2} V  {:5.2} A  {}",
-            v,
-            i,
+            "Display: {v:5.2} V  {i:5.2} A  {}",
             if cc { "CC" } else { "CV" }
         );
         Ok(())
