@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use clap_verbosity_flag::{Verbosity, WarnLevel};
+use powsup::{InteractiveArgs, PowSup};
 use simple_logger::SimpleLogger;
 use std::time::Duration;
 
@@ -18,17 +19,17 @@ fn main() -> Result<()> {
         Some(Command::Interactive { ref args }) => {
             powsup::interactive(&mut get_powsup(&cli)?, args)
         }
-        None => powsup::interactive(&mut get_powsup(&cli)?, &powsup::InteractiveArgs::default()),
+        None => powsup::interactive(&mut get_powsup(&cli)?, &InteractiveArgs::default()),
     }
 }
 
-fn get_powsup(cli: &Cli) -> Result<powsup::PowSup> {
+fn get_powsup(cli: &Cli) -> Result<PowSup> {
     let msg = "Failed to guess serial-port of power-supply.  Use option `--serial-port` to select one.  Try the command `powsup list --all` to get a list of all serial-ports.";
     let port = cli
         .serial_port
         .clone()
         .map_or_else(|| powsup::guess_port().context(msg), Ok)?;
-    powsup::PowSup::new(&port)
+    PowSup::new(&port)
 }
 
 #[derive(Parser, Debug)]
@@ -69,6 +70,6 @@ enum Command {
     /// Run in interactive mode [default]
     Interactive {
         #[clap(flatten)]
-        args: powsup::InteractiveArgs,
+        args: InteractiveArgs,
     },
 }
