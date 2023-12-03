@@ -12,14 +12,15 @@ build` should be enough to get you started.
 #+end_src
 
 
-#+begin_src bash :results output
+#+begin_src bash :results output :exports both
   ./target/release/powsup --help
 #+end_src
 
+#+RESULTS:
 #+begin_example
 Controlling a Manson power-supply via serial connection.
 
-Usage: powsup [OPTIONS] <COMMAND>
+Usage: powsup [OPTIONS] [COMMAND]
 
 Commands:
   list         List serial ports where a power-supply might be connected to
@@ -27,7 +28,7 @@ Commands:
   on           Turn the output on
   powercycle   Turn the output off and after x milliseconds back on
   status       Get the preset and the actual voltage and current values
-  interactive  Run in interactive mode (press 'q' to exit)
+  interactive  Run in interactive mode [default]
   help         Print this message or the help of the given subcommand(s)
 
 Options:
