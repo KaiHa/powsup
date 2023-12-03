@@ -1,4 +1,4 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Context, Error, Result};
 use clap::Args;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
@@ -13,7 +13,11 @@ use std::{collections::VecDeque, io, str::from_utf8, time, time::Duration};
 pub fn list_ports(args: &ListArgs) -> Result<()> {
     let ports =
         serialport::available_ports().context("Failed to enumerate the available serial ports.")?;
-    let predicate: fn(&SerialPortInfo) -> bool = if args.all { |_| true } else { is_powersupply };
+    let predicate: fn(&SerialPortInfo) -> bool = if args.list_all {
+        |_| true
+    } else {
+        is_powersupply
+    };
     for p in ports.into_iter().filter(predicate) {
         println!("{}", p.port_name);
         if args.details {
@@ -82,33 +86,30 @@ fn run_app<B: Backend>(
 
 fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
     let mut message: Vec<Line> = Vec::new();
+    let mut prt_err = |err: Error| {
+        message.push(Line::from(Span::styled(
+            err.to_string(),
+            Style::default().fg(Color::Red),
+        )))
+    };
     let (max_v, max_i) = match powsup.get_max() {
-        Ok((a, b)) => (a, b),
+        Ok(a) => a,
         Err(err) => {
-            message.push(Line::from(Span::styled(
-                err.to_string(),
-                Style::default().fg(Color::Red),
-            )));
+            prt_err(err);
             (f32::NAN, f32::NAN)
         }
     };
     let (preset_v, preset_i) = match powsup.get_preset() {
-        Ok((a, b)) => (a, b),
+        Ok(a) => a,
         Err(err) => {
-            message.push(Line::from(Span::styled(
-                err.to_string(),
-                Style::default().fg(Color::Red),
-            )));
+            prt_err(err);
             (f32::NAN, f32::NAN)
         }
     };
     let (display_v, display_i, display_mode) = match powsup.get_display() {
         Ok((a, b, c)) => (a, b, if c { "CC" } else { "CV" }),
         Err(err) => {
-            message.push(Line::from(Span::styled(
-                err.to_string(),
-                Style::default().fg(Color::Red),
-            )));
+            prt_err(err);
             (f32::NAN, f32::NAN, "--")
         }
     };
@@ -407,7 +408,7 @@ impl PowSup {
 pub struct ListArgs {
     /// List all available serial ports
     #[clap(short, long)]
-    all: bool,
+    list_all: bool,
     /// Print details about the serial ports
     #[clap(short, long)]
     details: bool,
