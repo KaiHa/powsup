@@ -16,10 +16,8 @@ fn main() -> Result<()> {
         Some(Command::On) => get_powsup(&cli)?.on(),
         Some(Command::Powercycle { off_duration }) => get_powsup(&cli)?.powercycle(off_duration),
         Some(Command::Status { brief }) => get_powsup(&cli)?.status(brief),
-        Some(Command::Interactive { ref args }) => {
-            powsup::interactive(&mut get_powsup(&cli)?, args)
-        }
-        None => powsup::interactive(&mut get_powsup(&cli)?, &InteractiveArgs::default()),
+        Some(Command::Interactive { ref args }) => get_powsup(&cli)?.interactive(args),
+        None => get_powsup(&cli)?.interactive(&InteractiveArgs::default()),
     }
 }
 

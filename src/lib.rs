@@ -40,30 +40,6 @@ pub fn guess_port() -> Result<String> {
     }
 }
 
-pub fn interactive(powsup: &mut PowSup, args: &InteractiveArgs) -> Result<()> {
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
-
-    let res = run_app(&mut terminal, powsup, args);
-
-    disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
-    terminal.show_cursor()?;
-
-    if let Err(err) = res {
-        Err(anyhow!(err))
-    } else {
-        Ok(())
-    }
-}
-
 fn run_app<B: Backend>(
     terminal: &mut Terminal<B>,
     powsup: &mut PowSup,
@@ -402,6 +378,30 @@ impl PowSup {
             if cc { "CC" } else { "CV" }
         );
         Ok(())
+    }
+
+    pub fn interactive(&mut self, args: &InteractiveArgs) -> Result<()> {
+        enable_raw_mode()?;
+        let mut stdout = io::stdout();
+        execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+        let backend = CrosstermBackend::new(stdout);
+        let mut terminal = Terminal::new(backend)?;
+
+        let res = run_app(&mut terminal, self, args);
+
+        disable_raw_mode()?;
+        execute!(
+            terminal.backend_mut(),
+            LeaveAlternateScreen,
+            DisableMouseCapture
+        )?;
+        terminal.show_cursor()?;
+
+        if let Err(err) = res {
+            Err(anyhow!(err))
+        } else {
+            Ok(())
+        }
     }
 }
 
