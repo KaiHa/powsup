@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{bail, Context, Result};
 use clap::Args;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
@@ -387,7 +387,9 @@ impl PowSup {
         let backend = CrosstermBackend::new(stdout);
         let mut terminal = Terminal::new(backend)?;
 
-        let res = run_app(&mut terminal, self, args);
+        // Do NOT unwrap the result here, only after we have put the
+        // console back in a proper state.
+        let result = run_app(&mut terminal, self, args);
 
         disable_raw_mode()?;
         execute!(
@@ -397,11 +399,7 @@ impl PowSup {
         )?;
         terminal.show_cursor()?;
 
-        if let Err(err) = res {
-            Err(anyhow!(err))
-        } else {
-            Ok(())
-        }
+        result
     }
 }
 
