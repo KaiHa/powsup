@@ -23,12 +23,12 @@ fn main() -> Result<()> {
 }
 
 fn get_powsup(cli: &Cli) -> Result<powsup::PowSup> {
-    let port = if let Some(port) = cli.serial_port.clone() {
-        Ok(port)
-    } else {
-        powsup::guess_port().context("Failed to guess serial-port of power-supply.  Use option `--serial-port` to select one.  Try the command `powsup list --all` to get a list of all serial-ports.")
-    };
-    powsup::PowSup::new(&port?)
+    let msg = "Failed to guess serial-port of power-supply.  Use option `--serial-port` to select one.  Try the command `powsup list --all` to get a list of all serial-ports.";
+    let port = cli
+        .serial_port
+        .clone()
+        .map_or_else(|| powsup::guess_port().context(msg), Ok)?;
+    powsup::PowSup::new(&port)
 }
 
 #[derive(Parser, Debug)]
