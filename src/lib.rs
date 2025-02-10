@@ -92,34 +92,27 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
             Style::default().fg(Color::Red),
         )))
     };
-    let (max_v, max_i) = match powsup.get_max() {
-        Ok(a) => a,
-        Err(err) => {
-            prt_err(err);
-            (f32::NAN, f32::NAN)
-        }
-    };
-    let display_out = match powsup.get_out() {
-        Ok(s) => s,
-        Err(err) => {
-            prt_err(err);
-            "Error".to_string()
-        }
-    };
-    let (preset_v, preset_i) = match powsup.get_preset() {
-        Ok(a) => a,
-        Err(err) => {
-            prt_err(err);
-            (f32::NAN, f32::NAN)
-        }
-    };
-    let (display_v, display_i, display_mode) = match powsup.get_display() {
-        Ok((a, b, c)) => (a, b, if c { "CC" } else { "CV" }),
-        Err(err) => {
-            prt_err(err);
-            (f32::NAN, f32::NAN, "--")
-        }
-    };
+
+    let (max_v, max_i) = powsup.get_max().unwrap_or_else(|err| {
+        prt_err(err);
+        (f32::NAN, f32::NAN)
+    });
+
+    let display_out = powsup.get_out().unwrap_or_else(|err| {
+        prt_err(err);
+        "Error".to_string()
+    });
+
+    let (preset_v, preset_i) = powsup.get_preset().unwrap_or_else(|err| {
+        prt_err(err);
+        (f32::NAN, f32::NAN)
+    });
+
+    let (display_v, display_i, display_mode) = powsup.get_display().unwrap_or_else(|err| {
+        prt_err(err);
+        (f32::NAN, f32::NAN, String::from("--"))
+    });
+
     let ppanes = Layout::default()
         .direction(Direction::Vertical)
         .constraints(
@@ -137,16 +130,19 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
         .split(ppanes[0]);
 
     let block = Block::default()
-        .title(if let Some(s) = powsup.port.name() {
-            format!(" {s} ")
-        } else {
-            String::from(" <unknown port> ")
-        })
+        .title(
+            powsup
+                .port
+                .name()
+                .map_or_else(|| " <unknown port> ".to_string(), |s| format!(" {s} ")),
+        )
         .borders(Borders::ALL);
     let text = vec![
         Line::from("        Voltage   Current      "),
         Line::from(format!("Maximum: {max_v:5.2} V   {max_i:5.2} A      ")),
-        Line::from(format!("Preset:  {preset_v:5.2} V   {preset_i:5.2} A  {display_out:5}")),
+        Line::from(format!(
+            "Preset:  {preset_v:5.2} V   {preset_i:5.2} A  {display_out:5}"
+        )),
         Line::from(format!(
             "Actual:  {display_v:5.2} V   {display_i:5.2} A  {display_mode}  "
         )),
@@ -299,7 +295,7 @@ impl PowSup {
         self.expect_ok()
     }
 
-    pub fn get_display(&mut self) -> Result<(f32, f32, bool)> {
+    pub fn get_display(&mut self) -> Result<(f32, f32, String)> {
         self.write("GETD\r")?;
         let reply = self.read()?;
         if reply.len() != 13 || &reply[10..] != "OK\r" {
@@ -315,8 +311,8 @@ impl PowSup {
             .parse::<f32>()
             .context("Failed to parse current from reply")?;
         let cc = match &reply[8..9] {
-            "0" => false,
-            "1" => true,
+            "0" => String::from("CV"),
+            "1" => String::from("CC"),
             _other => bail!("Failed to parse const-current mode from reply"),
         };
         while self.trend.len() >= 300 {
@@ -393,10 +389,7 @@ impl PowSup {
             println!("Preset:  {v:5.2} V  {i:5.2} A");
         }
         let (v, i, cc) = self.get_display()?;
-        println!(
-            "Display: {v:5.2} V  {i:5.2} A  {}",
-            if cc { "CC" } else { "CV" }
-        );
+        println!("Display: {v:5.2} V  {i:5.2} A  {cc}");
         Ok(())
     }
 
