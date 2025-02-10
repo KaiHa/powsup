@@ -22,7 +22,7 @@ fn main() -> Result<()> {
 }
 
 fn get_powsup(cli: &Cli) -> Result<PowSup> {
-    let msg = "Failed to guess serial-port of power-supply.  Use option `--serial-port` to select one.  Try the command `powsup list --all` to get a list of all serial-ports.";
+    let msg = "Failed to guess serial-port of power-supply.  Use option `--serial-port` to select one.  Try the command `powsup list --list-all` to get a list of all serial-ports.";
     let port = cli
         .serial_port
         .clone()
