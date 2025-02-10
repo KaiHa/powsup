@@ -99,6 +99,13 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
             (f32::NAN, f32::NAN)
         }
     };
+    let display_out = match powsup.get_out() {
+        Ok(s) => s,
+        Err(err) => {
+            prt_err(err);
+            "Error".to_string()
+        }
+    };
     let (preset_v, preset_i) = match powsup.get_preset() {
         Ok(a) => a,
         Err(err) => {
@@ -137,11 +144,11 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
         })
         .borders(Borders::ALL);
     let text = vec![
-        Line::from("        Voltage   Current    "),
-        Line::from(format!("Maximum: {max_v:5.2} V   {max_i:5.2} A    ")),
-        Line::from(format!("Preset:  {preset_v:5.2} V   {preset_i:5.2} A    ")),
+        Line::from("        Voltage   Current      "),
+        Line::from(format!("Maximum: {max_v:5.2} V   {max_i:5.2} A      ")),
+        Line::from(format!("Preset:  {preset_v:5.2} V   {preset_i:5.2} A  {display_out:5}")),
         Line::from(format!(
-            "Actual:  {display_v:5.2} V   {display_i:5.2} A  {display_mode}"
+            "Actual:  {display_v:5.2} V   {display_i:5.2} A  {display_mode}  "
         )),
     ];
     let paragraph = Paragraph::new(text.clone())
@@ -357,6 +364,24 @@ impl PowSup {
                 .context("Failed to parse current from reply")?;
             self.cached_max = Some((v, c));
             Ok((v, c))
+        }
+    }
+
+    pub fn get_out(&mut self) -> Result<String> {
+        self.write("GOUT\r")?;
+        let reply = self.read()?;
+        if reply.len() != 5 || &reply[2..] != "OK\r" {
+            bail!(
+                "Got an unexpected GOUT reply from the power-supply: {:?}",
+                &reply
+            );
+        }
+        if &reply[..1] == "0" {
+            Ok("On".to_string())
+        } else if &reply[..1] == "1" {
+            Ok("Off".to_string())
+        } else {
+            bail!("Got an unexpected value as GOUT reply: {:?}", &reply)
         }
     }
 
