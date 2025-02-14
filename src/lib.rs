@@ -140,9 +140,17 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
     let text = vec![
         Line::from("        Voltage   Current      "),
         Line::from(format!("Maximum: {max_v:5.2} V   {max_i:5.2} A      ")),
-        Line::from(format!(
-            "Preset:  {preset_v:5.2} V   {preset_i:5.2} A  {display_out:5}"
-        )),
+        Line::from(vec![
+            Span::from(format!("Preset:  {preset_v:5.2} V   {preset_i:5.2} A  ")),
+            Span::styled(
+                format!("{display_out:5}"),
+                if display_out == "On" {
+                    Style::default().green().bold()
+                } else {
+                    Style::default().fg(Color::Red)
+                },
+            ),
+        ]),
         Line::from(format!(
             "Actual:  {display_v:5.2} V   {display_i:5.2} A  {display_mode}  "
         )),
