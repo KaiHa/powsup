@@ -76,6 +76,8 @@ fn run_app<B: Backend>(
                         powsup.off()?;
                         last_powercycle = Some(time::Instant::now());
                     }
+                    KeyCode::Char('j') => powsup.y_max_offset -= 1.0,
+                    KeyCode::Char('k') => powsup.y_max_offset += 1.0,
                     KeyCode::Char('q') => return Ok(()),
                     _other => (),
                 }
@@ -165,10 +167,10 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
         .title(" Key bindings ")
         .borders(Borders::ALL);
     let text = vec![
-        Line::from("p => Power on   "),
-        Line::from("n => Power off  "),
-        Line::from("c => Power cycle"),
-        Line::from("q => Quit       "),
+        Line::from("p => Power on     j => Zoom in (y-axis) "),
+        Line::from("n => Power off    k => Zoom out (y-axis)"),
+        Line::from("c => Power cycle                        "),
+        Line::from("q => Quit                               "),
     ];
     let paragraph = Paragraph::new(text.clone())
         .alignment(Alignment::Center)
@@ -176,6 +178,10 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
     f.render_widget(paragraph, panes[1]);
 
     // middle block
+    if powsup.y_max_offset + preset_i < 1.0 {
+        powsup.y_max_offset = - preset_i + 1.0;
+    }
+    let y_max = preset_i + powsup.y_max_offset;
     let data: Vec<(f64, f64)> = std::iter::zip(1..300, &powsup.trend)
         .map(|(x, (_, i))| (x.into(), (*i).into()))
         .collect();
@@ -191,10 +197,12 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
                 .title("A")
                 .labels(vec![
                     Span::raw("0"),
-                    Span::raw(format!("{}", preset_i / 2.0)),
-                    Span::raw(format!("{}", preset_i)),
+                    Span::raw(format!("{}", y_max * 0.25)),
+                    Span::raw(format!("{}", y_max * 0.5)),
+                    Span::raw(format!("{}", y_max * 0.75)),
+                    Span::raw(format!("{}", y_max)),
                 ])
-                .bounds([0.0, preset_i.into()]),
+                .bounds([0.0, y_max.into()]),
         );
     f.render_widget(chart, ppanes[1]);
 
@@ -220,6 +228,7 @@ pub struct PowSup {
     port: Box<dyn SerialPort>,
     cached_max: Option<(f32, f32)>,
     trend: VecDeque<(f32, f32)>,
+    y_max_offset: f32,
 }
 
 impl PowSup {
@@ -238,6 +247,7 @@ impl PowSup {
             port,
             cached_max: Option::None,
             trend: VecDeque::with_capacity(300),
+            y_max_offset: 0.0,
         })
     }
 
