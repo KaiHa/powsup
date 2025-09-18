@@ -1,11 +1,10 @@
 * powsup
 
-Small CLI programm to control a Manson® power-supply.
+Small CLI programm to control a Manson® power-supply. See [[https://www.manson.com.hk/storage/media/Documents/7673-3400-0017_20240306_Approved.pdf][their documentation]] for the protocol details.
 
 It should work in GNU/Linux and Windows environments.
 
-If you happen to have a modestly recent Rust installed then `cargo
-build` should be enough to get you started.
+If you happen to have a modestly recent Rust installed then `cargo build` should be enough to get you started.
 
 #+begin_src bash :results output
   cargo build --release
