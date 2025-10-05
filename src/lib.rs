@@ -5,6 +5,8 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use derive_more::{From, Into};
+use std::fmt;
 use ratatui::prelude::*;
 use ratatui::widgets::*;
 use serialport::{ClearBuffer, SerialPort, SerialPortInfo, SerialPortType};
@@ -97,7 +99,7 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
 
     let (max_v, max_i) = powsup.get_max().unwrap_or_else(|err| {
         prt_err(err);
-        (f32::NAN, f32::NAN)
+        (Voltage(f64::NAN), Current(f64::NAN))
     });
 
     let display_out = powsup.get_out().unwrap_or_else(|err| {
@@ -107,12 +109,12 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
 
     let (preset_v, preset_i) = powsup.get_preset().unwrap_or_else(|err| {
         prt_err(err);
-        (f32::NAN, f32::NAN)
+        (Voltage(f64::NAN), Current(f64::NAN))
     });
 
     let (display_v, display_i, display_mode) = powsup.get_display().unwrap_or_else(|err| {
         prt_err(err);
-        (f32::NAN, f32::NAN, String::from("--"))
+        (Voltage(f64::NAN), Current(f64::NAN), String::from("--"))
     });
 
     let ppanes = Layout::default()
@@ -141,9 +143,9 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
         .borders(Borders::ALL);
     let text = vec![
         Line::from("        Voltage   Current      "),
-        Line::from(format!("Maximum: {max_v:5.2} V   {max_i:5.2} A      ")),
+        Line::from(format!("Maximum: {max_v}   {max_i}      ")),
         Line::from(vec![
-            Span::from(format!("Preset:  {preset_v:5.2} V   {preset_i:5.2} A  ")),
+            Span::from(format!("Preset:  {preset_v}   {preset_i}  ")),
             Span::styled(
                 format!("{display_out:5}"),
                 if display_out == "On" {
@@ -154,7 +156,7 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
             ),
         ]),
         Line::from(format!(
-            "Actual:  {display_v:5.2} V   {display_i:5.2} A  {display_mode}  "
+            "Actual:  {display_v}   {display_i}  {display_mode}  "
         )),
     ];
     let paragraph = Paragraph::new(text.clone())
@@ -178,10 +180,10 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
     f.render_widget(paragraph, panes[1]);
 
     // middle block
-    if powsup.y_max_offset + preset_i < 1.0 {
-        powsup.y_max_offset = - preset_i + 1.0;
+    if powsup.y_max_offset + f64::from(preset_i) < 1.0 {
+        powsup.y_max_offset = - f64::from(preset_i) + 1.0;
     }
-    let y_max = preset_i + powsup.y_max_offset;
+    let y_max: f64 = f64::from(preset_i) + powsup.y_max_offset;
     let data: Vec<(f64, f64)> = std::iter::zip(1..300, &powsup.trend)
         .map(|(x, (_, i))| (x.into(), (*i).into()))
         .collect();
@@ -224,11 +226,29 @@ fn is_powersupply(SerialPortInfo { port_type, .. }: &SerialPortInfo) -> bool {
     }
 }
 
+#[derive(Debug, Clone, Copy, From, Into, PartialEq)]
+pub struct Current(f64);
+
+impl fmt::Display for Current {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:5.2} A", self.0)
+    }
+}
+
+#[derive(Debug, Clone, Copy, From, Into, PartialEq)]
+pub struct Voltage(f64);
+
+impl fmt::Display for Voltage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:5.2} V", self.0)
+    }
+}
+
 pub struct PowSup {
     port: Box<dyn SerialPort>,
-    cached_max: Option<(f32, f32)>,
-    trend: VecDeque<(f32, f32)>,
-    y_max_offset: f32,
+    cached_max: Option<(Voltage, Current)>,
+    trend: VecDeque<(Voltage, Current)>,
+    y_max_offset: f64,
 }
 
 impl PowSup {
@@ -313,7 +333,7 @@ impl PowSup {
         self.expect_ok()
     }
 
-    pub fn get_display(&mut self) -> Result<(f32, f32, String)> {
+    pub fn get_display(&mut self) -> Result<(Voltage, Current, String)> {
         self.write("GETD\r")?;
         let reply = self.read()?;
         if reply.len() != 13 || &reply[10..] != "OK\r" {
@@ -323,11 +343,13 @@ impl PowSup {
             );
         }
         let v = format!("{}.{}", &reply[0..2], &reply[2..4])
-            .parse::<f32>()
-            .context("Failed to parse voltage from reply")?;
+            .parse::<f64>()
+            .context("Failed to parse voltage from reply")?
+            .into();
         let c = format!("{}.{}", &reply[4..6], &reply[6..8])
-            .parse::<f32>()
-            .context("Failed to parse current from reply")?;
+            .parse::<f64>()
+            .context("Failed to parse current from reply")?
+            .into();
         let cc = match &reply[8..9] {
             "0" => String::from("CV"),
             "1" => String::from("CC"),
@@ -340,7 +362,7 @@ impl PowSup {
         Ok((v, c, cc))
     }
 
-    pub fn get_preset(&mut self) -> Result<(f32, f32)> {
+    pub fn get_preset(&mut self) -> Result<(Voltage, Current)> {
         self.write("GETS\r")?;
         let reply = self.read()?;
         if reply.len() != 10 || &reply[7..] != "OK\r" {
@@ -350,15 +372,17 @@ impl PowSup {
             );
         }
         let v = format!("{}.{}", &reply[0..2], &reply[2..3])
-            .parse::<f32>()
-            .context("Failed to parse voltage from reply")?;
+            .parse::<f64>()
+            .context("Failed to parse voltage from reply")?
+            .into();
         let c = format!("{}.{}", &reply[3..5], &reply[5..6])
-            .parse::<f32>()
-            .context("Failed to parse current from reply")?;
+            .parse::<f64>()
+            .context("Failed to parse current from reply")?
+            .into();
         Ok((v, c))
     }
 
-    pub fn get_max(&mut self) -> Result<(f32, f32)> {
+    pub fn get_max(&mut self) -> Result<(Voltage, Current)> {
         if let Some(max) = self.cached_max {
             Ok(max)
         } else {
@@ -371,11 +395,13 @@ impl PowSup {
                 );
             }
             let v = format!("{}.{}", &reply[0..2], &reply[2..3])
-                .parse::<f32>()
-                .context("Failed to parse voltage from reply")?;
+                .parse::<f64>()
+                .context("Failed to parse voltage from reply")?
+                .into();
             let c = format!("{}.{}", &reply[3..5], &reply[5..6])
-                .parse::<f32>()
-                .context("Failed to parse current from reply")?;
+                .parse::<f64>()
+                .context("Failed to parse current from reply")?
+                .into();
             self.cached_max = Some((v, c));
             Ok((v, c))
         }
@@ -402,12 +428,12 @@ impl PowSup {
     pub fn status(&mut self, brief: bool) -> Result<()> {
         if !brief {
             let (v, i) = self.get_max()?;
-            println!("Maximum: {v:5.2} V  {i:5.2} A");
+            println!("Maximum: {v}  {i}");
             let (v, i) = self.get_preset()?;
-            println!("Preset:  {v:5.2} V  {i:5.2} A");
+            println!("Preset:  {v}  {i}");
         }
         let (v, i, cc) = self.get_display()?;
-        println!("Display: {v:5.2} V  {i:5.2} A  {cc}");
+        println!("Display: {v}  {i}  {cc}");
         Ok(())
     }
 
