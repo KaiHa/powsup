@@ -1,4 +1,5 @@
 use anyhow::{bail, Context, Error, Result};
+use circular_buffer::CircularBuffer;
 use clap::Args;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
@@ -10,7 +11,7 @@ use std::fmt;
 use ratatui::prelude::*;
 use ratatui::widgets::*;
 use serialport::{ClearBuffer, SerialPort, SerialPortInfo, SerialPortType};
-use std::{collections::VecDeque, io, str::from_utf8, time, time::Duration};
+use std::{io, str::from_utf8, time, time::Duration};
 
 pub fn list_ports(args: &ListArgs) -> Result<()> {
     let ports =
@@ -247,7 +248,7 @@ impl fmt::Display for Voltage {
 pub struct PowSup {
     port: Box<dyn SerialPort>,
     cached_max: Option<(Voltage, Current)>,
-    trend: VecDeque<(Voltage, Current)>,
+    trend: CircularBuffer<300, (Voltage, Current)>,
     y_max_offset: f64,
 }
 
@@ -266,7 +267,7 @@ impl PowSup {
         Ok(PowSup {
             port,
             cached_max: Option::None,
-            trend: VecDeque::with_capacity(300),
+            trend: CircularBuffer::new(),
             y_max_offset: 0.0,
         })
     }
@@ -355,9 +356,6 @@ impl PowSup {
             "1" => String::from("CC"),
             _other => bail!("Failed to parse const-current mode from reply"),
         };
-        while self.trend.len() >= 300 {
-            self.trend.pop_front();
-        }
         self.trend.push_back((v, c));
         Ok((v, c, cc))
     }
