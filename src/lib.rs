@@ -107,7 +107,7 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
 
     let display_out = powsup.get_out().unwrap_or_else(|err| {
         prt_err(err);
-        "Error".to_string()
+        OnOff::Error
     });
 
     let (preset_v, preset_i) = powsup.get_preset().unwrap_or_else(|err| {
@@ -151,10 +151,9 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
             Span::from(format!("Preset:  {preset_v}   {preset_i}  ")),
             Span::styled(
                 format!("{display_out:5}"),
-                if display_out == "On" {
-                    Style::default().green().bold()
-                } else {
-                    Style::default().fg(Color::Red)
+                match display_out {
+                    OnOff::On => Style::default().green().bold(),
+                    _ => Style::default().fg(Color::Red),
                 },
             ),
         ]),
@@ -260,6 +259,23 @@ impl fmt::Display for CxMode {
             Self::ConstantCurrent => f.pad("CC"),
             Self::ConstantVoltage => f.pad("CV"),
             Self::Unknown => f.pad("--"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum OnOff {
+    On,
+    Off,
+    Error,
+}
+
+impl fmt::Display for OnOff {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::On => f.pad("On"),
+            Self::Off => f.pad("Off"),
+            Self::Error => f.pad("Error"),
         }
     }
 }
@@ -424,7 +440,7 @@ impl PowSup {
         }
     }
 
-    pub fn get_out(&mut self) -> Result<String> {
+    pub fn get_out(&mut self) -> Result<OnOff> {
         self.write("GOUT\r")?;
         let reply = self.read()?;
         if reply.len() != 5 || &reply[2..] != "OK\r" {
@@ -434,9 +450,9 @@ impl PowSup {
             );
         }
         if &reply[..1] == "0" {
-            Ok("On".to_string())
+            Ok(OnOff::On)
         } else if &reply[..1] == "1" {
-            Ok("Off".to_string())
+            Ok(OnOff::Off)
         } else {
             bail!("Got an unexpected value as GOUT reply: {:?}", &reply)
         }
