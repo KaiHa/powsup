@@ -13,6 +13,8 @@ use ratatui::widgets::*;
 use serialport::{ClearBuffer, SerialPort, SerialPortInfo, SerialPortType};
 use std::{io, str::from_utf8, time, time::Duration};
 
+const HISTORY_SIZE: u16 = 300;
+
 pub fn list_ports(args: &ListArgs) -> Result<()> {
     let ports =
         serialport::available_ports().context("Failed to enumerate the available serial ports.")?;
@@ -185,7 +187,7 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
         powsup.y_max_offset = - f64::from(preset_i) + 1.0;
     }
     let y_max: f64 = f64::from(preset_i) + powsup.y_max_offset;
-    let data: Vec<(f64, f64)> = std::iter::zip(1..300, &powsup.trend)
+    let data: Vec<(f64, f64)> = std::iter::zip(1..HISTORY_SIZE, &powsup.trend)
         .map(|(x, (_, i))| (x.into(), (*i).into()))
         .collect();
     let datasets = vec![Dataset::default()
@@ -194,7 +196,7 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
         .data(&data)];
     let chart = Chart::new(datasets)
         .block(Block::default())
-        .x_axis(Axis::default().bounds([1.0, 300.0]))
+        .x_axis(Axis::default().bounds([1.0, f64::from(HISTORY_SIZE)]))
         .y_axis(
             Axis::default()
                 .title("A")
@@ -248,7 +250,7 @@ impl fmt::Display for Voltage {
 pub struct PowSup {
     port: Box<dyn SerialPort>,
     cached_max: Option<(Voltage, Current)>,
-    trend: CircularBuffer<300, (Voltage, Current)>,
+    trend: CircularBuffer<{ HISTORY_SIZE as usize }, (Voltage, Current)>,
     y_max_offset: f64,
 }
 
