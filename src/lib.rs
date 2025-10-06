@@ -117,7 +117,7 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
 
     let (display_v, display_i, display_mode) = powsup.get_display().unwrap_or_else(|err| {
         prt_err(err);
-        (Voltage(f64::NAN), Current(f64::NAN), String::from("--"))
+        (Voltage(f64::NAN), Current(f64::NAN), CxMode::Unknown)
     });
 
     let ppanes = Layout::default()
@@ -247,6 +247,23 @@ impl fmt::Display for Voltage {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CxMode {
+    ConstantCurrent,
+    ConstantVoltage,
+    Unknown,
+}
+
+impl fmt::Display for CxMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ConstantCurrent => f.pad("CC"),
+            Self::ConstantVoltage => f.pad("CV"),
+            Self::Unknown => f.pad("--"),
+        }
+    }
+}
+
 pub struct PowSup {
     port: Box<dyn SerialPort>,
     cached_max: Option<(Voltage, Current)>,
@@ -336,7 +353,7 @@ impl PowSup {
         self.expect_ok()
     }
 
-    pub fn get_display(&mut self) -> Result<(Voltage, Current, String)> {
+    pub fn get_display(&mut self) -> Result<(Voltage, Current, CxMode)> {
         self.write("GETD\r")?;
         let reply = self.read()?;
         if reply.len() != 13 || &reply[10..] != "OK\r" {
@@ -354,8 +371,8 @@ impl PowSup {
             .context("Failed to parse current from reply")?
             .into();
         let cc = match &reply[8..9] {
-            "0" => String::from("CV"),
-            "1" => String::from("CC"),
+            "0" => CxMode::ConstantVoltage,
+            "1" => CxMode::ConstantCurrent,
             _other => bail!("Failed to parse const-current mode from reply"),
         };
         self.trend.push_back((v, c));
