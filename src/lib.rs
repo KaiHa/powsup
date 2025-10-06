@@ -7,10 +7,10 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use derive_more::{From, Into};
-use std::fmt;
 use ratatui::prelude::*;
 use ratatui::widgets::*;
 use serialport::{ClearBuffer, SerialPort, SerialPortInfo, SerialPortType};
+use std::fmt;
 use std::{io, str::from_utf8, time, time::Duration};
 
 const HISTORY_SIZE: u16 = 300;
@@ -184,7 +184,7 @@ fn update_tui(f: &mut Frame, powsup: &mut PowSup) {
 
     // middle block
     if powsup.y_max_offset + f64::from(preset_i) < 1.0 {
-        powsup.y_max_offset = - f64::from(preset_i) + 1.0;
+        powsup.y_max_offset = -f64::from(preset_i) + 1.0;
     }
     let y_max: f64 = f64::from(preset_i) + powsup.y_max_offset;
     let data: Vec<(f64, f64)> = std::iter::zip(1..HISTORY_SIZE, &powsup.trend)
